@@ -1,6 +1,7 @@
 const bcrypt=require('bcrypt')
 const userModel = require('../../models/User')
 const {writeFile} = require("../../middlewares/WriteFile");
+const jwt = require('jsonwebtoken');
 
 
 const SIGNUP = async function (req,res) {
@@ -26,13 +27,16 @@ const SIGNUP = async function (req,res) {
 
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        writeFile('/profile/immage',req.file.buffer)(req,res);
+        await writeFile('/profile/image',req.file.buffer)(req,res);
+
+        const token = jwt.sign({email:email},process.env.SECRET_KEY)
 
         const result = await userModel.create({
             name:name,
             email : email,
             password:hashedPassword,
-            imageUrl:req.file.filePath,
+            imageUrl:req.filePath,
+            token:token
         });
 
         return res.status(200).send(result)

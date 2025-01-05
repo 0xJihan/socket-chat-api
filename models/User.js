@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
     deviceId:{
         type:String,
         default:""
+    },
+    token:{
+        type:String,
+        required:true,
     }
 },{timestamps: true});
 

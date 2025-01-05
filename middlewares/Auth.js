@@ -15,15 +15,15 @@ const validateToken = async (req, res, next) => {
             req.email = user.email;
             next()
         } catch (err) {
-            res.status(401).json({
-                "message": "Unauthorized user", "success": false
-            })
+            res.status(401).send(
+                "Unauthorized user"
+            )
         }
 
     } else {
-        res.status(401).json({
-            "message": "unauthorized access", "success": false
-        });
+        res.status(401).send(
+           "unauthorized access"
+        );
     }
 
 }

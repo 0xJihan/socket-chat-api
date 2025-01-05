@@ -1,8 +1,10 @@
-
 const bcrypt = require('bcrypt');
 const userModel = require('../../models/User')
+const jwt = require('jsonwebtoken');
 
 const LOGIN = async (req,res)=>{
+
+
     const {email, password} = req.body;
 
 
@@ -22,6 +24,9 @@ const LOGIN = async (req,res)=>{
         if(!isPasswordSame){
             return res.status(400).send('Incorrect password');
         }
+
+        userExist.token = await jwt.sign({email: email}, process.env.SECRET_KEY);
+        await userExist.save();
         return res.status(201).send(userExist);
 
 

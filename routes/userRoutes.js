@@ -3,6 +3,7 @@ const express = require('express');
 const {SIGNUP} = require("../controllers/user/Signup");
 const {uploadFile} = require("../middlewares/UploadFile");
 const {LOGIN} = require("../controllers/user/Login");
+const {validateToken} = require("../middlewares/Auth");
 
 const userRouter = express.Router();
 
