@@ -166,5 +166,4 @@ module.exports = {
     loginController,
     signupController,
     uploadProfile,
-    validateAuthentication
 }
