@@ -1,27 +1,16 @@
 const express = require('express');
-const mongoose = require('mongoose');
-
-const {SIGNUP} = require("../controllers/user/Signup");
-const {uploadFile} = require("../middlewares/UploadFile");
-const {LOGIN} = require("../controllers/user/Login");
 const {validateToken} = require("../middlewares/Auth");
-const userModel = require("../models/User");
+const userController = require("../controllers/userControllers");
+const {upload} = require("../middlewares/Upload");
 
 const userRouter = express.Router();
 
 
-userRouter.post('/signup',uploadFile('image'),SIGNUP)
-userRouter.post('/login',uploadFile('none'),LOGIN)
-userRouter.get('/post',validateToken, async (req, res)=> {
-    try {
+userRouter.post('/login',userController.loginController)
+userRouter.post('/signup',userController.signupController)
+userRouter.post('/upload',validateToken,upload.single('profileImage'),userController.uploadProfile)
 
-        const users = await userModel.find();
-        res.send(users);
 
-    }catch (e) {
-        console.error(e);
-        return res.status(401).send("Internal Server Error");
-    }
-})
+
 
 module.exports = {userRouter}

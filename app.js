@@ -3,48 +3,74 @@ const app = express();
 const http = require('http');
 require('dotenv').config();
 const expressServer = http.createServer(app);
-const {Server} = require('socket.io');
+const {Server, Socket} = require('socket.io');
 const io = new Server(expressServer);
 const mongoose = require('mongoose');
 const {userRouter} = require("./routes/userRoutes");
-const bodyParser = require('body-parser');
+const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const path = require("path");
+const userModel = require("./models/User");
 
 
-
+//server configs
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 io.on('connection', async (socket) => {
+    console.log('Connected to Server')
 
-    const token = socket.handshake.auth.token;
-    let email;
-    if (!token) {
-        console.log("No token provided");
-        socket.disconnect();
-    }
+    socket.on('authenticate', async (token) => {
+        try {
+            if (!token) {
+                socket.emit('error','Invalid token');
+                return socket.emit('authenticate', false);
+            }
 
-   await jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
-        if (err) {
-            socket.disconnect();
-            console.log(err)
-        }else{
-           email = decoded.email;
+            jwt.verify(token, process.env.SECRET_KEY, async (err, decoded) => {
+                try {
+                    if (err) {
+                        socket.emit('error', 'JWT verification failed.');
+                        return socket.emit('authenticate', false);
+                    }
+
+                    const user = await userModel.findOne({email: decoded.email});
+
+                    if (!user) {
+                        socket.emit('error', 'User not found');
+                        return socket.emit('authenticate', false);
+                    }
+
+                    if (token === user.token) {
+                        socket.emit('authenticate', true);
+                    } else {
+                        socket.emit('error', 'You are account was logged in to another device');
+                        socket.emit('authenticate', false);
+                    }
+                } catch (error) {
+                    socket.emit('error', 'Something went wrong. Please log in again.');
+                    socket.emit('authenticate', false);
+                }
+            });
+        } catch (error) {
+            socket.emit('error', 'Something went wrong. Please log in again.');
+            console.error("Authentication error:", error);
+            socket.emit('authenticate', false);
         }
     });
 
-
-    console.log('Connected to Server')
-
-
-
-
-
-
-
-
     socket.on('disconnect', (code) => {
         console.log(`Client disconnected: ${code}`);
-    })
-})
+    });
+});
+
+
+// for accessing file under upload directory in browser with file name
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+if (!fs.existsSync(__dirname+'/uploads')) {
+    fs.mkdirSync(__dirname+'/uploads');
+}
+
 
 // Router
 app.use('/',userRouter)
@@ -57,14 +83,11 @@ app.get('/', (req, res) => {
 });
 
 
-// middlewares
-//app.use(bodyParser.json());
-app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect(process.env.MONGO_URI).then(() => {
     expressServer.listen(5000,()=>{
-        console.log("Server started on port 5000")
+        console.clear();
+        console.log("Server started on port 5000");
     });
 }).catch((err) => {
     console.error(err);
