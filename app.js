@@ -34,7 +34,7 @@ io.on('connection', async (socket) => {
                         return socket.emit('authenticate', false);
                     }
 
-                    const user = await userModel.findOne({email: decoded.email});
+                    const user = await userModel.findById(decoded.id)
 
                     if (!user) {
                         socket.emit('error', 'User not found');

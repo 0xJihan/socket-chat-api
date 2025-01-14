@@ -37,14 +37,15 @@ const signupController = async function (req,res) {
         const hashedPassword = await bcrypt.hash(password, 12);
 
 
-        const token = jwt.sign({email:email},process.env.SECRET_KEY)
-
-        const result = await userModel.create({
+        const user = new userModel({
             name:name,
             email : email,
             password:hashedPassword,
-            token:token
         });
+
+        const token = await jwt.sign({email:email,id:user._id},process.env.SECRET_KEY)
+        user.token = token;
+        await user.save();
 
         return res.status(200).send({
             message:"Registered successfully",
@@ -76,7 +77,6 @@ const loginController = async (req,res)=>{
     }
 
 
-
         const userExist = await userModel.findOne({email : email});
         if(!userExist){
             return res.status(400).json({
@@ -94,7 +94,7 @@ const loginController = async (req,res)=>{
             })
         }
 
-        const newToken = await jwt.sign({email: email}, process.env.SECRET_KEY);
+        const newToken = await jwt.sign({email: email,id:userExist._id}, process.env.SECRET_KEY);
         userExist.token = newToken;
 
         await userExist.save();

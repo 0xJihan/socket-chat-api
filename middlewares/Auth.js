@@ -11,7 +11,7 @@ const validateToken = async (req, res, next) => {
             token = token.split(" ")[1];
             let user = jwt.verify(token, process.env.SECRET_KEY);
 
-            req.uid = user.uid;
+            req.id = user.id;
             req.email = user.email;
             next()
         } catch (err) {
