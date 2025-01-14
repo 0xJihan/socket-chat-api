@@ -85,6 +85,7 @@ const loginController = async (req,res)=>{
             })
         }
 
+
         const isPasswordSame = await bcrypt.compare(password, userExist.password);
 
         if(!isPasswordSame){

@@ -8,9 +8,9 @@ const io = new Server(expressServer);
 const mongoose = require('mongoose');
 const {userRouter} = require("./routes/userRoutes");
 const fs = require('fs');
-const jwt = require('jsonwebtoken');
 const path = require("path");
 const userModel = require("./models/User");
+const {authenticationHandler} = require("./socket/Authentication");
 
 
 //server configs
@@ -18,49 +18,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 io.on('connection', async (socket) => {
+
+    const context = {
+        documentId:null
+    }
+
+
     console.log('Connected to Server')
 
-    socket.on('authenticate', async (token) => {
-        try {
-            if (!token) {
-                socket.emit('error','Invalid token');
-                return socket.emit('authenticate', false);
-            }
+    // Handling token authentication
+  authenticationHandler(socket,context);
 
-            jwt.verify(token, process.env.SECRET_KEY, async (err, decoded) => {
-                try {
-                    if (err) {
-                        socket.emit('error', 'JWT verification failed.');
-                        return socket.emit('authenticate', false);
-                    }
 
-                    const user = await userModel.findById(decoded.id)
 
-                    if (!user) {
-                        socket.emit('error', 'User not found');
-                        return socket.emit('authenticate', false);
-                    }
 
-                    if (token === user.token) {
-                        socket.emit('authenticate', true);
-                    } else {
-                        socket.emit('error', 'You are account was logged in to another device');
-                        socket.emit('authenticate', false);
-                    }
-                } catch (error) {
-                    socket.emit('error', 'Something went wrong. Please log in again.');
-                    socket.emit('authenticate', false);
-                }
-            });
-        } catch (error) {
-            socket.emit('error', 'Something went wrong. Please log in again.');
-            console.error("Authentication error:", error);
-            socket.emit('authenticate', false);
-        }
-    });
 
-    socket.on('disconnect', (code) => {
+    socket.on('disconnect', async (code) => {
         console.log(`Client disconnected: ${code}`);
+       try{
+           await userModel.findByIdAndUpdate(context.documentId,{
+               isOnline: false
+           });
+       }catch(err){
+           console.log("\n\n\n\n")
+           console.clear()
+           console.log(err);
+       }
     });
 });
 
